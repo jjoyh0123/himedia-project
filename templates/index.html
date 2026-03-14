@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Object Detection System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .upload-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin-bottom: 2rem;
+            transition: transform 0.2s ease;
+        }
+
+        .upload-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .file-input-wrapper {
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .custom-file-upload {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            background-color: #334155;
+            border-radius: 0.5rem;
+            border: 1px dashed #475569;
+            color: var(--text-main);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .custom-file-upload:hover {
+            background-color: #475569;
+            border-color: var(--primary);
+        }
+
+        .btn-submit {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-hover);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .result-section {
+            margin-top: 3rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            text-align: left;
+        }
+
+        @media (max-width: 768px) {
+            .result-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .image-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .image-box h3 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .image-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            display: block;
+        }
+
+        .detection-list {
+            margin-top: 2rem;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.05);
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .badge {
+            background-color: var(--success);
+            padding: 0.25rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .loading-spinner {
+            display: none;
+            margin: 1rem auto;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Object Detection</h1>
+        <p class="subtitle">Upload an image to see deep learning in action</p>
+
+        <div class="upload-card">
+            <form id="upload-form" action="/detect-visualize" method="post" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <label for="file-upload" class="custom-file-upload">
+                        📁 Choose Image File
+                    </label>
+                    <input id="file-upload" type="file" name="file" accept="image/*" onchange="updateFileName()">
+                    <div id="file-name" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--primary);">No file selected</div>
+                </div>
+                <button type="submit" class="btn-submit" onclick="showLoading()">Run Inference</button>
+            </form>
+            <div class="loading-spinner" id="spinner"></div>
+        </div>
+
+        {% if original_image %}
+        <div class="result-section">
+            <div class="image-box">
+                <h3>Original Image</h3>
+                <img src="data:image/jpeg;base64,{{ original_image }}" alt="Original">
+            </div>
+            <div class="image-box">
+                <h3>Detection Result</h3>
+                <img src="data:image/jpeg;base64,{{ result_image }}" alt="Result">
+            </div>
+        </div>
+
+        <div class="detection-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Object Class</th>
+                        <th>Confidence</th>
+                        <th>Bounding Box [x1, y1, x2, y2]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for det in detections %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ det.class_name }}</td>
+                        <td><span class="badge">{{ "%.1f"|format(det.confidence * 100) }}%</span></td>
+                        <td style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted);">
+                            [{{ det.box[0]|int }}, {{ det.box[1]|int }}, {{ det.box[2]|int }}, {{ det.box[3]|int }}]
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not detections %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">No objects detected with current threshold (0.5)</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function updateFileName() {
+            const input = document.getElementById('file-upload');
+            const nameDisplay = document.getElementById('file-name');
+            if (input.files.length > 0) {
+                nameDisplay.textContent = 'Selected: ' + input.files[0].name;
+            }
+        }
+
+        function showLoading() {
+            const form = document.getElementById('upload-form');
+            if (document.getElementById('file-upload').files.length > 0) {
+                document.getElementById('spinner').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

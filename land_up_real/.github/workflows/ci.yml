@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 기술 스택 결정 후 아래 주석 중 해당하는 것 활성화
+
+      # --- Node.js ---
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: "20"
+      #     cache: "npm"
+      # - run: npm ci
+      # - run: npm run lint
+      # - run: npm test
+
+      # --- Python ---
+      # - name: Setup Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: "3.12"
+      # - run: pip install -r requirements.txt
+      # - run: pytest
+
+      # --- Docker build 검증 ---
+      - name: Build Docker image (smoke test)
+        run: |
+          if [ -f Dockerfile ]; then
+            docker build -t app:ci .
+          else
+            echo "Dockerfile 없음 — 스택 결정 후 추가 필요"
+          fi
